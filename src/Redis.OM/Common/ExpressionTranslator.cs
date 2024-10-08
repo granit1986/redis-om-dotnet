@@ -187,6 +187,7 @@ namespace Redis.OM.Common
             var parameters = new List<object>();
             var indexName = string.IsNullOrEmpty(attr.IndexName) ? $"{type.Name.ToLower()}-idx" : attr.IndexName;
             var query = new RedisQuery(indexName!) { QueryText = "*" };
+            var sb = new StringBuilder();
             switch (expression)
             {
                 case MethodCallExpression methodExpression:
@@ -229,7 +230,15 @@ namespace Redis.OM.Common
                                 query.GeoFilter = ExpressionParserUtilities.TranslateGeoFilter(exp);
                                 break;
                             case "Where":
-                                query.QueryText = TranslateWhereMethod(exp, parameters);
+                                if (sb.Length == 0)
+                                {
+                                   sb.Append(TranslateWhereMethod(exp, parameters));
+                                }
+                                else
+                                {
+                                    sb.Append($" {TranslateWhereMethod(exp, parameters)}");
+                                }
+
                                 break;
                             case "NearestNeighbors":
                                 query.NearestNeighbors = ParseNearestNeighborsFromExpression(exp);
@@ -243,6 +252,11 @@ namespace Redis.OM.Common
                 case LambdaExpression lambda:
                     query.QueryText = BuildQueryFromExpression(lambda.Body, parameters);
                     break;
+            }
+
+            if (sb.Length > 0)
+            {
+                query.QueryText = $"({sb})";
             }
 
             if (mainBooleanExpression != null)

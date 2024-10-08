@@ -1103,6 +1103,21 @@ namespace Redis.OM.Unit.Tests.RediSearchTests
         }
 
         [Fact]
+        public void TestMultiWhereSelect()
+        {
+            var name = "steve";
+            var obj = new Person { Name = name, Age = 33 };
+            var collection = new RedisCollection<Person>(_connection);
+            collection.Insert(obj);
+            var query = collection.Where(x => x.Age == obj.Age);
+            query = query.Where(x => x.Name == name);
+            var q = query.Select(x => x.Age);
+            var res = q.ToArray();
+            Assert.NotEmpty(res);
+            collection.Delete(obj);
+        }
+
+        [Fact]
         public void TestQueryWithForwardSlashes()
         {
             var collection = new RedisCollection<ObjectWithZeroStopwords>(_connection);
